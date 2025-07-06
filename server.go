@@ -90,6 +90,13 @@ func handleConn(conn net.Conn) {
 				continue
 			}
 			conn.Write([]byte("OK"))
+		case query.Update != nil:
+			err = db.Update(query.Update.Key, query.Update.Value)
+			if err != nil {
+				conn.Write([]byte(err.Error()))
+				continue
+			}
+			conn.Write([]byte("OK"))
 		default:
 			conn.Write([]byte("BAD_QUERY"))
 		}

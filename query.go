@@ -2,6 +2,7 @@
 
 import (
 	"fmt"
+
 	"github.com/alecthomas/participle/v2"
 )
 
@@ -21,10 +22,17 @@ type DeleteQuery struct {
 	Key    string `@Ident`
 }
 
+type UpdateQuery struct {
+	Update string `@"UPDATE"`
+	Key    string `@Ident`
+	Value  string `@String`
+}
+
 type Query struct {
 	Get    *GetQuery    `@@`
 	Set    *SetQuery    `| @@`
 	Delete *DeleteQuery `| @@`
+	Update *UpdateQuery `| @@`
 }
 
 func parseQuery(input string) (*Query, error) {
