@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"context"
@@ -10,12 +10,10 @@ import (
 	"syscall"
 )
 
-var db Database
+var db *Database
 
 func StartServer() error {
-	db = Database{
-		m: make(map[string]string),
-	}
+	db = NewDatabase()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -68,8 +66,15 @@ func handleConn(conn net.Conn) {
 		}
 
 		switch {
+		case query.CreateDb != nil:
+			err = db.CreateDb(query.CreateDb.Name)
+			if err != nil {
+				conn.Write([]byte(err.Error()))
+				continue
+			}
+			conn.Write([]byte("OK"))
 		case query.Get != nil:
-			value, err := db.Get(query.Get.Key)
+			value, err := db.Get(query.Get.Location.Db, query.Get.Location.Key)
 			if err != nil {
 				conn.Write([]byte(err.Error()))
 				continue
@@ -77,21 +82,32 @@ func handleConn(conn net.Conn) {
 			conn.Write([]byte(value))
 		case query.Set != nil:
 			value := strings.Trim(query.Set.Value, "\"")
-			err = db.Add(query.Set.Key, value)
+			err = db.Add(query.Set.Location.Db, query.Set.Location.Key, value)
 			if err != nil {
 				conn.Write([]byte(err.Error()))
 				continue
 			}
 			conn.Write([]byte("OK"))
-		case query.Delete != nil:
-			err = db.Remove(query.Delete.Key)
-			if err != nil {
-				conn.Write([]byte(err.Error()))
-				continue
+		case query.Remove != nil:
+			switch query.Remove.Which {
+			case "DB":
+				err = db.DeleteDb(query.Remove.DB)
+				if err != nil {
+					conn.Write([]byte(err.Error()))
+					continue
+				}
+				conn.Write([]byte("OK"))
+			case "KEY":
+				err = db.Remove(query.Remove.DB, *query.Remove.Key)
+				if err != nil {
+					conn.Write([]byte(err.Error()))
+					continue
+				}
+				conn.Write([]byte("OK"))
 			}
-			conn.Write([]byte("OK"))
+			conn.Write([]byte("BAD_QUERY"))
 		case query.Update != nil:
-			err = db.Update(query.Update.Key, query.Update.Value)
+			err = db.Update(query.Update.Location.Db, query.Update.Location.Key, query.Update.Value)
 			if err != nil {
 				conn.Write([]byte(err.Error()))
 				continue
@@ -100,6 +116,5 @@ func handleConn(conn net.Conn) {
 		default:
 			conn.Write([]byte("BAD_QUERY"))
 		}
-
 	}
 }

@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"errors"
@@ -6,52 +6,111 @@ import (
 )
 
 type Database struct {
-	mu sync.RWMutex
-	m  map[string]string
+	mu   sync.RWMutex
+	maps map[string]map[string]string
 }
 
-func (d *Database) Add(key string, value string) error {
+func NewDatabase() *Database {
+	return &Database{
+		maps: make(map[string]map[string]string),
+	}
+}
+
+func (d *Database) CreateDb(name string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	_, exists := d.m[key]
+
+	_, exists := d.maps[name]
 	if exists {
 		return errors.New("ALREADY_EXISTS")
 	}
 
-	d.m[key] = value
+	d.maps[name] = make(map[string]string)
+
 	return nil
 }
 
-func (d *Database) Get(key string) (string, error) {
+func (d *Database) DeleteDb(name string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	_, exists := d.maps[name]
+	if !exists {
+		return errors.New("DATABASE_NOT_FOUND")
+	}
+
+	delete(d.maps, name)
+
+	return nil
+}
+
+func (d *Database) Add(db string, key string, value string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	keysMap, exists := d.maps[db]
+	if !exists {
+		return errors.New("DATABASE_NOT_FOUND")
+	}
+
+	_, exists = keysMap[key]
+	if exists {
+		return errors.New("ALREADY_EXISTS")
+	}
+
+	keysMap[key] = value
+	return nil
+}
+
+func (d *Database) Get(db string, key string) (string, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	value, exists := d.m[key]
+
+	keysMap, exists := d.maps[db]
 	if !exists {
-		return "", errors.New("NOT_FOUND")
+		return "", errors.New("DATABASE_NOT_FOUND")
 	}
+
+	value, exists := keysMap[key]
+	if !exists {
+		return "", errors.New("KEY_NOT_FOUND")
+	}
+
 	return value, nil
 }
 
-func (d *Database) Remove(key string) error {
+func (d *Database) Remove(db string, key string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	_, exists := d.m[key]
+
+	keysMap, exists := d.maps[db]
 	if !exists {
-		return errors.New("key not found")
+		return errors.New("DATABASE_NOT_FOUND")
 	}
 
-	delete(d.m, key)
+	_, exists = keysMap[key]
+	if !exists {
+		return errors.New("KEY_NOT_FOUND")
+	}
+
+	delete(keysMap, key)
 	return nil
 }
 
-func (d *Database) Update(key string, newValue string) error {
+func (d *Database) Update(db string, key string, newValue string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	_, exists := d.m[key]
+
+	keyMaps, exists := d.maps[db]
 	if !exists {
-		return errors.New("key not found")
+		return errors.New("DATABASE_NOT_FOUND")
 	}
 
-	d.m[key] = newValue
+	_, exists = keyMaps[key]
+	if !exists {
+		return errors.New("KEY_NOT_FOUND")
+	}
+
+	keyMaps[key] = newValue
 	return nil
 }

@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"fmt"
@@ -6,33 +6,47 @@ import (
 	"github.com/alecthomas/participle/v2"
 )
 
-type GetQuery struct {
-	Get string `@"GET"`
+type Location struct {
+	Db  string `@Ident`
+	Dot string `@"."`
 	Key string `@Ident`
 }
 
-type SetQuery struct {
-	Set   string `@"SET"`
-	Key   string `@Ident`
-	Value string `@String`
+type CreateDbQuery struct {
+	CreateDb string `@"CREATEDB"`
+	Name     string `@Ident`
 }
 
-type DeleteQuery struct {
-	Delete string `@"DELETE"`
-	Key    string `@Ident`
+type GetQuery struct {
+	Get      string    `@"GET"`
+	Location *Location `@@`
+}
+
+type SetQuery struct {
+	Set      string    `@"SET"`
+	Location *Location `@@`
+	Value    string    `@String`
+}
+
+type RemoveQuery struct {
+	Delete string  `@"REMOVE"`
+	Which  string  `@("DB" | "KEY")`
+	DB     string  `@Ident`
+	Key    *string `( "." @Ident )?`
 }
 
 type UpdateQuery struct {
-	Update string `@"UPDATE"`
-	Key    string `@Ident`
-	Value  string `@String`
+	Update   string    `@"UPDATE"`
+	Location *Location `@@`
+	Value    string    `@String`
 }
 
 type Query struct {
-	Get    *GetQuery    `@@`
-	Set    *SetQuery    `| @@`
-	Delete *DeleteQuery `| @@`
-	Update *UpdateQuery `| @@`
+	CreateDb *CreateDbQuery `@@`
+	Get      *GetQuery      `| @@`
+	Set      *SetQuery      `| @@`
+	Remove   *RemoveQuery   `| @@`
+	Update   *UpdateQuery   `| @@`
 }
 
 func parseQuery(input string) (*Query, error) {
