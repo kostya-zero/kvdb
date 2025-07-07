@@ -25,7 +25,7 @@ func StartServer() error {
 
 	go func() {
 		<-ctx.Done()
-		println("Received CTRL+C. Shutting down server...")
+		LogInfo("Received CTRL+C. Shutting down server...")
 		listener.Close()
 	}()
 
@@ -35,13 +35,19 @@ func StartServer() error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			println("failed to accept connection: " + err.Error())
+			LogError("failed to accept connection: " + err.Error())
 			continue
 		}
 
 		go handleConn(conn)
 	}
-	return nil
+}
+
+func sendResponse(conn net.Conn, msg string) {
+	_, err := conn.Write([]byte(msg))
+	if err != nil {
+		LogError("failed to send response: " + err.Error())
+	}
 }
 
 func handleConn(conn net.Conn) {
@@ -53,13 +59,13 @@ func handleConn(conn net.Conn) {
 			break
 		}
 		if err != nil {
-			println("failed to read from connection: " + err.Error())
+			LogError("failed to read from connection: " + err.Error())
 			return
 		}
 		receiveQuery := string(buf[:n])
 		query, err := parseQuery(receiveQuery)
 		if err != nil {
-			conn.Write([]byte("BAD_QUERY"))
+			sendResponse(conn, "BAD_QUERY")
 			continue
 		}
 
@@ -67,56 +73,57 @@ func handleConn(conn net.Conn) {
 		case query.CreateDb != nil:
 			err = db.CreateDb(query.CreateDb.Name)
 			if err != nil {
-				conn.Write([]byte(err.Error()))
+				sendResponse(conn, err.Error())
 				continue
 			}
 			LogInfo("database '" + query.CreateDb.Name + "' has beed created.")
-			conn.Write([]byte("OK"))
+			sendResponse(conn, "OK")
 		case query.Get != nil:
 			value, err := db.Get(query.Get.Location.Db, query.Get.Location.Key)
 			if err != nil {
-				conn.Write([]byte(err.Error()))
+				sendResponse(conn, err.Error())
 				continue
 			}
-			conn.Write([]byte(value))
+			sendResponse(conn, value)
 		case query.Set != nil:
 			value := strings.Trim(query.Set.Value, "\"")
 			err = db.Add(query.Set.Location.Db, query.Set.Location.Key, value)
 			if err != nil {
-				conn.Write([]byte(err.Error()))
+				sendResponse(conn, err.Error())
 				continue
 			}
 			LogInfo("created key '" + query.Set.Location.Key + "' on database '" + query.Set.Location.Db + "' with value '" + query.Set.Value + "'")
-			conn.Write([]byte("OK"))
+			sendResponse(conn, "OK")
 		case query.Remove != nil:
 			switch query.Remove.Which {
 			case "DB":
 				err = db.DeleteDb(query.Remove.DB)
 				if err != nil {
-					conn.Write([]byte(err.Error()))
+					sendResponse(conn, err.Error())
 					continue
 				}
-				conn.Write([]byte("OK"))
+				LogInfo("database '" + query.Remove.DB + "' has been removed.")
+				sendResponse(conn, "OK")
 			case "KEY":
 				err = db.Remove(query.Remove.DB, *query.Remove.Key)
 				if err != nil {
-					conn.Write([]byte(err.Error()))
+					sendResponse(conn, err.Error())
 					continue
 				}
 				LogInfo("key '" + *query.Remove.Key + "' from database '" + query.Remove.DB + "' has been removed")
-				conn.Write([]byte("OK"))
+				sendResponse(conn, "OK")
 			}
-			conn.Write([]byte("BAD_QUERY"))
+			sendResponse(conn, "BAD_QUERY")
 		case query.Update != nil:
 			err = db.Update(query.Update.Location.Db, query.Update.Location.Key, query.Update.Value)
 			if err != nil {
-				conn.Write([]byte(err.Error()))
+				sendResponse(conn, err.Error())
 				continue
 			}
 			LogInfo("key '" + query.Update.Location.Key + "' from database '" + query.Update.Location.Db + "' has been updated to value '" + query.Update.Value + "'")
 			conn.Write([]byte("OK"))
 		default:
-			conn.Write([]byte("BAD_QUERY"))
+			sendResponse(conn, "BAD_QUERY")
 		}
 	}
 }
