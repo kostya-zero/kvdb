@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2"
 )
 
@@ -59,6 +57,5 @@ func parseQuery(input string) (*Query, error) {
 	if err != nil {
 		return &Query{}, err
 	}
-	fmt.Printf("Parsed query: %#v\n", expr)
 	return expr, nil
 }

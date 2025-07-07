@@ -16,13 +16,12 @@ func StartServer() error {
 	db = NewDatabase()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
 	listener, err := net.Listen("tcp", ":3000")
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
-	println("Starting TCP server on port 3000")
+	LogInfo("Starting TCP server on port 3000")
 
 	go func() {
 		<-ctx.Done()
@@ -58,7 +57,6 @@ func handleConn(conn net.Conn) {
 			return
 		}
 		receiveQuery := string(buf[:n])
-		println("Received query: " + receiveQuery)
 		query, err := parseQuery(receiveQuery)
 		if err != nil {
 			conn.Write([]byte("BAD_QUERY"))
@@ -72,6 +70,7 @@ func handleConn(conn net.Conn) {
 				conn.Write([]byte(err.Error()))
 				continue
 			}
+			LogInfo("database '" + query.CreateDb.Name + "' has beed created.")
 			conn.Write([]byte("OK"))
 		case query.Get != nil:
 			value, err := db.Get(query.Get.Location.Db, query.Get.Location.Key)
@@ -87,6 +86,7 @@ func handleConn(conn net.Conn) {
 				conn.Write([]byte(err.Error()))
 				continue
 			}
+			LogInfo("created key '" + query.Set.Location.Key + "' on database '" + query.Set.Location.Db + "' with value '" + query.Set.Value + "'")
 			conn.Write([]byte("OK"))
 		case query.Remove != nil:
 			switch query.Remove.Which {
@@ -103,6 +103,7 @@ func handleConn(conn net.Conn) {
 					conn.Write([]byte(err.Error()))
 					continue
 				}
+				LogInfo("key '" + *query.Remove.Key + "' from database '" + query.Remove.DB + "' has been removed")
 				conn.Write([]byte("OK"))
 			}
 			conn.Write([]byte("BAD_QUERY"))
@@ -112,6 +113,7 @@ func handleConn(conn net.Conn) {
 				conn.Write([]byte(err.Error()))
 				continue
 			}
+			LogInfo("key '" + query.Update.Location.Key + "' from database '" + query.Update.Location.Db + "' has been updated to value '" + query.Update.Value + "'")
 			conn.Write([]byte("OK"))
 		default:
 			conn.Write([]byte("BAD_QUERY"))
