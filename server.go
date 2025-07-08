@@ -6,22 +6,30 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 )
 
 var db *Database
 
-func StartServer() error {
-	db = NewDatabase()
+func StartServer(port int, file string) error {
+	db = NewDatabase(file)
+
+	if file != "" {
+		err := db.LoadFromFile()
+		if err != nil {
+			LogError("failed to load database: " + err.Error())
+		}
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	listener, err := net.Listen("tcp", ":3000")
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
-	LogInfo("Starting TCP server on port 3000")
+	LogInfo("Starting TCP server on port " + strconv.Itoa(port))
 
 	go func() {
 		<-ctx.Done()
