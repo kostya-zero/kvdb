@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"os"
@@ -27,7 +27,7 @@ func main() {
 		},
 	}
 
-	serveCmd.Flags().IntVarP(&port, "port", "p", 3000, "The port number to use.")
+	serveCmd.Flags().IntVarP(&port, "port", "p", 5511, "The port number to use.")
 	serveCmd.Flags().StringVarP(&file, "file", "f", "", "The file to use for database.")
 
 	rootCmd.AddCommand(serveCmd)
