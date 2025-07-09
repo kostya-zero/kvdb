@@ -51,11 +51,15 @@ func StartServer(port int, file string) error {
 	}
 }
 
-func sendResponse(conn net.Conn, msg string) {
-	_, err := conn.Write([]byte(msg))
+func sendResponse(conn *net.Conn, msg string) {
+	_, err := (*conn).Write([]byte(msg))
 	if err != nil {
 		LogError("failed to send response: " + err.Error())
 	}
+}
+
+func IsValid(data string) bool {
+	return strings.ContainsAny(data, ":")
 }
 
 func handleConn(conn net.Conn) {
@@ -73,65 +77,149 @@ func handleConn(conn net.Conn) {
 		receiveQuery := string(buf[:n])
 		query, err := parseQuery(receiveQuery)
 		if err != nil {
-			sendResponse(conn, "BAD_QUERY")
+			sendResponse(&conn, "BAD_QUERY")
 			continue
 		}
 
 		switch {
 		case query.CreateDb != nil:
-			err = db.CreateDb(query.CreateDb.Name)
-			if err != nil {
-				sendResponse(conn, err.Error())
-				continue
-			}
-			LogInfo("database '" + query.CreateDb.Name + "' has beed created.")
-			sendResponse(conn, "OK")
+			handleCreateDb(query.CreateDb, &conn)
 		case query.Get != nil:
-			value, err := db.Get(query.Get.Location.Db, query.Get.Location.Key)
-			if err != nil {
-				sendResponse(conn, err.Error())
-				continue
-			}
-			sendResponse(conn, value)
+			handleGet(query.Get, &conn)
 		case query.Set != nil:
-			value := strings.Trim(query.Set.Value, "\"")
-			err = db.Add(query.Set.Location.Db, query.Set.Location.Key, value)
-			if err != nil {
-				sendResponse(conn, err.Error())
-				continue
-			}
-			LogInfo("created key '" + query.Set.Location.Key + "' on database '" + query.Set.Location.Db + "' with value '" + query.Set.Value + "'")
-			sendResponse(conn, "OK")
+			handleSet(query.Set, &conn)
 		case query.Remove != nil:
 			switch query.Remove.Which {
 			case "DB":
-				err = db.DeleteDb(query.Remove.DB)
-				if err != nil {
-					sendResponse(conn, err.Error())
-					continue
-				}
-				LogInfo("database '" + query.Remove.DB + "' has been removed.")
-				sendResponse(conn, "OK")
+				handleRemoveDb(query.Remove, &conn)
 			case "KEY":
-				err = db.Remove(query.Remove.DB, *query.Remove.Key)
-				if err != nil {
-					sendResponse(conn, err.Error())
-					continue
-				}
-				LogInfo("key '" + *query.Remove.Key + "' from database '" + query.Remove.DB + "' has been removed")
-				sendResponse(conn, "OK")
+				handleRemoveKey(query.Remove, &conn)
 			}
-			sendResponse(conn, "BAD_QUERY")
+			sendResponse(&conn, "BAD_QUERY")
 		case query.Update != nil:
-			err = db.Update(query.Update.Location.Db, query.Update.Location.Key, query.Update.Value)
-			if err != nil {
-				sendResponse(conn, err.Error())
-				continue
-			}
-			LogInfo("key '" + query.Update.Location.Key + "' from database '" + query.Update.Location.Db + "' has been updated to value '" + query.Update.Value + "'")
-			conn.Write([]byte("OK"))
+			handleUpdate(query.Update, &conn)
 		default:
-			sendResponse(conn, "BAD_QUERY")
+			sendResponse(&conn, "BAD_QUERY")
 		}
 	}
+}
+
+func handleCreateDb(query *CreateDbQuery, conn *net.Conn) {
+	name := query.Name
+	if !IsValid(name) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	err := db.CreateDb(name)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	LogInfo("database '" + name + "' has beed created.")
+
+	sendResponse(conn, "OK")
+	return
+}
+
+func handleGet(query *GetQuery, conn *net.Conn) {
+	targetDb := query.Location.Db
+	key := query.Location.Key
+
+	if !IsValid(targetDb) || !IsValid(key) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	value, err := db.Get(targetDb, key)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	sendResponse(conn, value)
+	return
+}
+
+func handleSet(query *SetQuery, conn *net.Conn) {
+	value := strings.Trim(query.Value, "\"")
+	targetDb := query.Location.Db
+	key := query.Location.Key
+
+	if !IsValid(value) || !IsValid(targetDb) || !IsValid(key) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	err := db.Add(targetDb, key, value)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	LogInfo("created key '" + key + "' on database '" + targetDb + "' with value '" + value + "'")
+	sendResponse(conn, "OK")
+}
+
+func handleRemoveDb(query *RemoveQuery, conn *net.Conn) {
+	targetDb := query.DB
+
+	if !IsValid(targetDb) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	err := db.DeleteDb(targetDb)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	LogInfo("database '" + targetDb + "' has been removed.")
+	sendResponse(conn, "OK")
+}
+
+func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
+	targetDb := query.DB
+	key := query.Key
+
+	if key == nil {
+		sendResponse(conn, "KEY_NOT_PROVIDED")
+		return
+	}
+
+	if !IsValid(targetDb) || !IsValid(*key) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	err := db.Remove(targetDb, *key)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	LogInfo("key '" + *key + "' from database '" + targetDb + "' has been removed")
+	sendResponse(conn, "OK")
+}
+
+func handleUpdate(query *UpdateQuery, conn *net.Conn) {
+	targetDb := query.Location.Db
+	key := query.Location.Key
+	value := query.Value
+
+	if !IsValid(value) || !IsValid(targetDb) || !IsValid(key) {
+		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		return
+	}
+
+	err := db.Update(targetDb, key, value)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	LogInfo("key '" + key + "' from database '" + targetDb + "' has been updated to value '" + value + "'")
+	sendResponse(conn, "OK")
 }
