@@ -1,14 +1,16 @@
 # `KVDB`
 
-KVDB is a key-value database with support for multiple maps in one database.
-It means you can create separate maps with their own keys. 
-This approach is chosen to prevent multiple services to overwrite their keys.
+KVDB is a lightweight key‑value store written in Go. It keeps data in
+named maps so multiple services can share a single server without clobbering
+each other's keys. The server exposes a plain TCP protocol and can optionally
+persist all updates to a file.
 
 ## Installation
 
 #### GitHub Releases
 
-Download an archive from [GitHub Releases]("https://github.com/kostya-zero/kvdb/releases") and extract the KVDB binary to directory that is added to `PATH`.
+Download an archive from [GitHub Releases]("https://github.com/kostya-zero/kvdb/releases") and extract the KVDB binary
+to directory that is added to `PATH`.
 
 #### Docker
 
@@ -21,11 +23,50 @@ docker run -p 5511:5511 kvdb
 
 ## Usage
 
-TBW
+Run the server with the `serve` command.
+
+```shell
+kvdb serve [flags]
+```
+
+Available flags:
+
+- `-p`, `--port` - TCP port to bind to (default `5511`).
+- `-f`, `--file` - path to the database file. When omitted, data is kept in memory only.
+
+Examples:
+
+```shell
+# Start with defaults (port 5511, in-memory database)
+kvdb serve
+
+# Persist data to my.db and expose on custom port
+kvdb serve --port 7777 --file my.db
+```
 
 ## API overview
 
-TBW
+The server communicates over plain TCP. Each request is a single line command and the response is a text string. The
+basic commands are:
+
+- `CREATEDB <db>` – create a new database map.
+- `REMOVE DB <db>` – remove a database.
+- `REMOVE KEY <db>.<key>` – delete a key.
+- `SET <db>.<key> "<value>"` – add a new key with value.
+- `GET <db>.<key>` – return the value for a key.
+- `UPDATE <db>.<key> "<value>"` – replace the current value.
+
+Responses are either `OK` or one of the following error codes: `ALREADY_EXISTS`, `DATABASE_NOT_FOUND`, `KEY_NOT_FOUND`,
+`KEY_NOT_PROVIDED`, `ILLEGAL_CHARACTERS`, or `BAD_QUERY`.
+
+You can test the server with tools like `nc`:
+
+```shell
+$ nc 127.0.0.1 5511
+CREATEDB users
+SET users.alice "alice@example.com"
+GET users.alice
+```
 
 ## License
 
