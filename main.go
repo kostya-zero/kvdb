@@ -2,14 +2,12 @@ package main
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
 
 func main() {
-	var port int
-	var file string
-
 	rootCmd := &cobra.Command{
 		Use:   "kvdb",
 		Short: "A key-value database",
@@ -19,7 +17,17 @@ func main() {
 		Use:   "serve",
 		Short: "Start the KVDB server.",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := StartServer(port, file)
+			port := os.Getenv("KVDB_PORT")
+			if port == "" {
+				port = "5511"
+			}
+			portInt, err := strconv.Atoi(port)
+			if err != nil {
+				LogWarn("Invalid port in KVDB_PORT. Falling back to 5511.")
+				portInt = 5511
+			}
+			file := os.Getenv("KVDB_DATABASE")
+			err = StartServer(portInt, file)
 			if err != nil {
 				println("error: " + err.Error())
 				os.Exit(1)
@@ -27,10 +35,16 @@ func main() {
 		},
 	}
 
-	serveCmd.Flags().IntVarP(&port, "port", "p", 5511, "The port number to use.")
-	serveCmd.Flags().StringVarP(&file, "file", "f", "", "The file to use for database.")
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Print the version of KVDB",
+		Run: func(cmd *cobra.Command, args []string) {
+			println("KVDB version: " + version)
+		},
+	}
 
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	err := rootCmd.Execute()
 	if err != nil {

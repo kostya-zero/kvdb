@@ -26,13 +26,13 @@ docker run -p 5511:5511 kvdb
 Run the server with the `serve` command.
 
 ```shell
-kvdb serve [flags]
+kvdb serve 
 ```
 
-Available flags:
+All options for KVDB should be provided as environment variables. Available variables:
 
-- `-p`, `--port` - TCP port to bind to (default `5511`).
-- `-f`, `--file` - path to the database file. When omitted, data is kept in memory only.
+- `KVDB_PORT` - TCP port to bind to (default `5511`).
+- `KVDB_DATABASE` - path to the database file. When omitted, data is kept in memory only.
 
 Examples:
 
@@ -40,8 +40,10 @@ Examples:
 # Start with defaults (port 5511, in-memory database)
 kvdb serve
 
-# Persist data to my.db and expose on custom port
-kvdb serve --port 7777 --file my.db
+# Persist data to kvdb.db and expose on custom port
+export KVDB_PORT=7777
+export KVDB_DATABASE/var/lib/kvdb/kvdb.db
+kvdb serve 
 ```
 
 ## API overview

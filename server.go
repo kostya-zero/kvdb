@@ -20,7 +20,11 @@ func StartServer(port int, file string) error {
 		err := db.LoadFromFile()
 		if err != nil {
 			LogError("failed to load database: " + err.Error())
+		} else {
+			LogInfo("Starting KVDB with file database.")
 		}
+	} else {
+		LogInfo("Starting KVDB with in-memory database.")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
