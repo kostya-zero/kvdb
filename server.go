@@ -14,6 +14,7 @@ import (
 var db *Database
 
 func StartServer(port int, file string) error {
+	LogInfo("KVDB " + version + " is starting...")
 	db = NewDatabase(file)
 
 	if file != "" {
@@ -21,11 +22,12 @@ func StartServer(port int, file string) error {
 		if err != nil {
 			LogError("failed to load database: " + err.Error())
 		} else {
-			LogInfo("Starting KVDB with file database.")
+			LogInfo("Using file database.")
 		}
 	} else {
-		LogInfo("Starting KVDB with in-memory database.")
+		LogInfo("Using in-memory database.")
 	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))

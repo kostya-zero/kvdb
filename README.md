@@ -14,7 +14,7 @@ to directory that is added to `PATH`.
 
 #### Docker
 
-Clone this repository and use `docker` CLI to build and run container.
+Clone this repository and use Docker CLI to build and run container.
 
 ```shell
 docker build -t kvdb .
@@ -48,8 +48,9 @@ kvdb serve
 
 ## API overview
 
-The server communicates over plain TCP. Each request is a single line command and the response is a text string. The
-basic commands are:
+The server communicates over plain TCP. 
+Each request is a single line command and the response is a text string. 
+Thebasic commands are:
 
 - `CREATEDB <db>` – create a new database map.
 - `REMOVE DB <db>` – remove a database.
