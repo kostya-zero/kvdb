@@ -28,6 +28,10 @@ type DatabaseMirror struct {
 func (d *Database) LoadFromFile() error {
 	f, err := os.OpenFile(d.Path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
+		if err.Error() == "EOF" {
+			LogWarn("Database file not found. Creating new one.")
+			return nil
+		}
 		return err
 	}
 
@@ -36,6 +40,10 @@ func (d *Database) LoadFromFile() error {
 	var dbMirror DatabaseMirror
 	decoder := gob.NewDecoder(f)
 	if err = decoder.Decode(&dbMirror); err != nil {
+		if err.Error() == "EOF" {
+			LogWarn("Database file not found. Creating new one.")
+			return nil
+		}
 		return err
 	}
 

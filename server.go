@@ -64,10 +64,6 @@ func sendResponse(conn *net.Conn, msg string) {
 	}
 }
 
-func IsValid(data string) bool {
-	return strings.ContainsAny(data, ":")
-}
-
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 1024)
@@ -110,12 +106,12 @@ func handleConn(conn net.Conn) {
 	}
 }
 
+func IsValid(data string) bool {
+	return strings.Contains(data, ":")
+}
+
 func handleCreateDb(query *CreateDbQuery, conn *net.Conn) {
 	name := query.Name
-	if !IsValid(name) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
-		return
-	}
 
 	err := db.CreateDb(name)
 	if err != nil {
@@ -126,17 +122,11 @@ func handleCreateDb(query *CreateDbQuery, conn *net.Conn) {
 	LogInfo("database '" + name + "' has beed created.")
 
 	sendResponse(conn, "OK")
-	return
 }
 
 func handleGet(query *GetQuery, conn *net.Conn) {
 	targetDb := query.Location.Db
 	key := query.Location.Key
-
-	if !IsValid(targetDb) || !IsValid(key) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
-		return
-	}
 
 	value, err := db.Get(targetDb, key)
 	if err != nil {
@@ -145,7 +135,6 @@ func handleGet(query *GetQuery, conn *net.Conn) {
 	}
 
 	sendResponse(conn, value)
-	return
 }
 
 func handleSet(query *SetQuery, conn *net.Conn) {
@@ -153,7 +142,7 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 	targetDb := query.Location.Db
 	key := query.Location.Key
 
-	if !IsValid(value) || !IsValid(targetDb) || !IsValid(key) {
+	if IsValid(value) {
 		sendResponse(conn, "ILLEGAL_CHARACTERS")
 		return
 	}
@@ -170,11 +159,6 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 
 func handleRemoveDb(query *RemoveQuery, conn *net.Conn) {
 	targetDb := query.DB
-
-	if !IsValid(targetDb) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
-		return
-	}
 
 	err := db.DeleteDb(targetDb)
 	if err != nil {
@@ -195,11 +179,6 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 		return
 	}
 
-	if !IsValid(targetDb) || !IsValid(*key) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
-		return
-	}
-
 	err := db.Remove(targetDb, *key)
 	if err != nil {
 		sendResponse(conn, err.Error())
@@ -213,9 +192,9 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 func handleUpdate(query *UpdateQuery, conn *net.Conn) {
 	targetDb := query.Location.Db
 	key := query.Location.Key
-	value := query.Value
+	value := strings.Trim(query.Value, "\n")
 
-	if !IsValid(value) || !IsValid(targetDb) || !IsValid(key) {
+	if IsValid(value) {
 		sendResponse(conn, "ILLEGAL_CHARACTERS")
 		return
 	}
