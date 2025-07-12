@@ -81,7 +81,7 @@ func NewDatabase(path string) *Database {
 	}
 }
 
-func (d *Database) CreateDb(name string) error {
+func (d *Database) CreateDB(name string) error {
 	d.Mu.Lock()
 	defer d.Mu.Unlock()
 
@@ -99,7 +99,7 @@ func (d *Database) CreateDb(name string) error {
 	return nil
 }
 
-func (d *Database) DeleteDb(name string) error {
+func (d *Database) DeleteDB(name string) error {
 	d.Mu.Lock()
 	defer d.Mu.Unlock()
 

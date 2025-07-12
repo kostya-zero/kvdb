@@ -5,13 +5,13 @@ import (
 )
 
 type Location struct {
-	Db  string `@Ident`
+	DB  string `@Ident`
 	Dot string `@"."`
 	Key string `@Ident`
 }
 
-type CreateDbQuery struct {
-	CreateDb string `@"CREATEDB"`
+type CreateDBQuery struct {
+	CreateDB string `@"CREATEDB"`
 	Name     string `@Ident`
 }
 
@@ -40,7 +40,7 @@ type UpdateQuery struct {
 }
 
 type Query struct {
-	CreateDb *CreateDbQuery `@@`
+	CreateDB *CreateDBQuery `@@`
 	Get      *GetQuery      `| @@`
 	Set      *SetQuery      `| @@`
 	Remove   *RemoveQuery   `| @@`

@@ -1,2 +1,7 @@
 /build
 /.idea
+
+# Hiding database that are for test purposes
+data.db
+test.db
+kvdb.db

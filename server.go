@@ -84,8 +84,8 @@ func handleConn(conn net.Conn) {
 		}
 
 		switch {
-		case query.CreateDb != nil:
-			handleCreateDb(query.CreateDb, &conn)
+		case query.CreateDB != nil:
+			handleCreateDB(query.CreateDB, &conn)
 		case query.Get != nil:
 			handleGet(query.Get, &conn)
 		case query.Set != nil:
@@ -93,7 +93,7 @@ func handleConn(conn net.Conn) {
 		case query.Remove != nil:
 			switch query.Remove.Which {
 			case "DB":
-				handleRemoveDb(query.Remove, &conn)
+				handleRemoveDB(query.Remove, &conn)
 			case "KEY":
 				handleRemoveKey(query.Remove, &conn)
 			}
@@ -110,10 +110,10 @@ func IsValid(data string) bool {
 	return strings.Contains(data, ":")
 }
 
-func handleCreateDb(query *CreateDbQuery, conn *net.Conn) {
+func handleCreateDB(query *CreateDBQuery, conn *net.Conn) {
 	name := query.Name
 
-	err := db.CreateDb(name)
+	err := db.CreateDB(name)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
@@ -125,10 +125,10 @@ func handleCreateDb(query *CreateDbQuery, conn *net.Conn) {
 }
 
 func handleGet(query *GetQuery, conn *net.Conn) {
-	targetDb := query.Location.Db
+	targetDB := query.Location.DB
 	key := query.Location.Key
 
-	value, err := db.Get(targetDb, key)
+	value, err := db.Get(targetDB, key)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
@@ -139,7 +139,7 @@ func handleGet(query *GetQuery, conn *net.Conn) {
 
 func handleSet(query *SetQuery, conn *net.Conn) {
 	value := strings.Trim(query.Value, "\"")
-	targetDb := query.Location.Db
+	targetDB := query.Location.DB
 	key := query.Location.Key
 
 	if IsValid(value) {
@@ -147,31 +147,31 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 		return
 	}
 
-	err := db.Add(targetDb, key, value)
+	err := db.Add(targetDB, key, value)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
 	}
 
-	LogInfo("created key '" + key + "' on database '" + targetDb + "' with value '" + value + "'")
+	LogInfo("created key '" + key + "' on database '" + targetDB + "' with value '" + value + "'")
 	sendResponse(conn, "OK")
 }
 
-func handleRemoveDb(query *RemoveQuery, conn *net.Conn) {
-	targetDb := query.DB
+func handleRemoveDB(query *RemoveQuery, conn *net.Conn) {
+	targetDB := query.DB
 
-	err := db.DeleteDb(targetDb)
+	err := db.DeleteDB(targetDB)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
 	}
 
-	LogInfo("database '" + targetDb + "' has been removed.")
+	LogInfo("database '" + targetDB + "' has been removed.")
 	sendResponse(conn, "OK")
 }
 
 func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
-	targetDb := query.DB
+	targetDB := query.DB
 	key := query.Key
 
 	if key == nil {
@@ -179,18 +179,18 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 		return
 	}
 
-	err := db.Remove(targetDb, *key)
+	err := db.Remove(targetDB, *key)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
 	}
 
-	LogInfo("key '" + *key + "' from database '" + targetDb + "' has been removed")
+	LogInfo("key '" + *key + "' from database '" + targetDB + "' has been removed")
 	sendResponse(conn, "OK")
 }
 
 func handleUpdate(query *UpdateQuery, conn *net.Conn) {
-	targetDb := query.Location.Db
+	targetDB := query.Location.DB
 	key := query.Location.Key
 	value := strings.Trim(query.Value, "\n")
 
@@ -199,12 +199,12 @@ func handleUpdate(query *UpdateQuery, conn *net.Conn) {
 		return
 	}
 
-	err := db.Update(targetDb, key, value)
+	err := db.Update(targetDB, key, value)
 	if err != nil {
 		sendResponse(conn, err.Error())
 		return
 	}
 
-	LogInfo("key '" + key + "' from database '" + targetDb + "' has been updated to value '" + value + "'")
+	LogInfo("key '" + key + "' from database '" + targetDB + "' has been updated to value '" + value + "'")
 	sendResponse(conn, "OK")
 }
