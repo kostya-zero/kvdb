@@ -79,7 +79,7 @@ func handleConn(conn net.Conn) {
 		receiveQuery := string(buf[:n])
 		query, err := parseQuery(receiveQuery)
 		if err != nil {
-			sendResponse(&conn, "BAD_QUERY")
+			sendResponse(&conn, ResponseBadQuery)
 			continue
 		}
 
@@ -96,12 +96,13 @@ func handleConn(conn net.Conn) {
 				handleRemoveDB(query.Remove, &conn)
 			case "KEY":
 				handleRemoveKey(query.Remove, &conn)
+			default:
+				sendResponse(&conn, ResponseBadQuery)
 			}
-			sendResponse(&conn, "BAD_QUERY")
 		case query.Update != nil:
 			handleUpdate(query.Update, &conn)
 		default:
-			sendResponse(&conn, "BAD_QUERY")
+			sendResponse(&conn, ResponseBadQuery)
 		}
 	}
 }
@@ -121,7 +122,7 @@ func handleCreateDB(query *CreateDBQuery, conn *net.Conn) {
 
 	LogInfo("database '" + name + "' has beed created.")
 
-	sendResponse(conn, "OK")
+	sendResponse(conn, ResponseOk)
 }
 
 func handleGet(query *GetQuery, conn *net.Conn) {
@@ -143,7 +144,7 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 	key := query.Location.Key
 
 	if IsValid(value) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		sendResponse(conn, ResponseIllegalChars)
 		return
 	}
 
@@ -154,7 +155,7 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 	}
 
 	LogInfo("created key '" + key + "' on database '" + targetDB + "' with value '" + value + "'")
-	sendResponse(conn, "OK")
+	sendResponse(conn, ResponseOk)
 }
 
 func handleRemoveDB(query *RemoveQuery, conn *net.Conn) {
@@ -167,7 +168,7 @@ func handleRemoveDB(query *RemoveQuery, conn *net.Conn) {
 	}
 
 	LogInfo("database '" + targetDB + "' has been removed.")
-	sendResponse(conn, "OK")
+	sendResponse(conn, ResponseOk)
 }
 
 func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
@@ -175,7 +176,7 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 	key := query.Key
 
 	if key == nil {
-		sendResponse(conn, "KEY_NOT_PROVIDED")
+		sendResponse(conn, ResponseKeyNotProvided)
 		return
 	}
 
@@ -186,7 +187,7 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 	}
 
 	LogInfo("key '" + *key + "' from database '" + targetDB + "' has been removed")
-	sendResponse(conn, "OK")
+	sendResponse(conn, ResponseOk)
 }
 
 func handleUpdate(query *UpdateQuery, conn *net.Conn) {
@@ -195,7 +196,7 @@ func handleUpdate(query *UpdateQuery, conn *net.Conn) {
 	value := strings.Trim(query.Value, "\n")
 
 	if IsValid(value) {
-		sendResponse(conn, "ILLEGAL_CHARACTERS")
+		sendResponse(conn, ResponseIllegalChars)
 		return
 	}
 
@@ -206,5 +207,5 @@ func handleUpdate(query *UpdateQuery, conn *net.Conn) {
 	}
 
 	LogInfo("key '" + key + "' from database '" + targetDB + "' has been updated to value '" + value + "'")
-	sendResponse(conn, "OK")
+	sendResponse(conn, ResponseOk)
 }

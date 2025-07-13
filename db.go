@@ -87,7 +87,7 @@ func (d *Database) CreateDB(name string) error {
 
 	_, exists := d.Maps[name]
 	if exists {
-		return errors.New("ALREADY_EXISTS")
+		return errors.New(ResponseAlreadyExists)
 	}
 
 	if d.Path != "" {
@@ -105,7 +105,7 @@ func (d *Database) DeleteDB(name string) error {
 
 	_, exists := d.Maps[name]
 	if !exists {
-		return errors.New("DATABASE_NOT_FOUND")
+		return errors.New(ResponseDatabaseNotFound)
 	}
 
 	if d.Path != "" {
@@ -123,12 +123,12 @@ func (d *Database) Add(db string, key string, value string) error {
 
 	keysMap, exists := d.Maps[db]
 	if !exists {
-		return errors.New("DATABASE_NOT_FOUND")
+		return errors.New(ResponseDatabaseNotFound)
 	}
 
 	_, exists = keysMap[key]
 	if exists {
-		return errors.New("ALREADY_EXISTS")
+		return errors.New(ResponseAlreadyExists)
 	}
 
 	if d.Path != "" {
@@ -145,12 +145,12 @@ func (d *Database) Get(db string, key string) (string, error) {
 
 	keysMap, exists := d.Maps[db]
 	if !exists {
-		return "", errors.New("DATABASE_NOT_FOUND")
+		return "", errors.New(ResponseDatabaseNotFound)
 	}
 
 	value, exists := keysMap[key]
 	if !exists {
-		return "", errors.New("KEY_NOT_FOUND")
+		return "", errors.New(ResponseKeyNotFound)
 	}
 
 	return value, nil
@@ -162,12 +162,12 @@ func (d *Database) Remove(db string, key string) error {
 
 	keysMap, exists := d.Maps[db]
 	if !exists {
-		return errors.New("DATABASE_NOT_FOUND")
+		return errors.New(ResponseDatabaseNotFound)
 	}
 
 	_, exists = keysMap[key]
 	if !exists {
-		return errors.New("KEY_NOT_FOUND")
+		return errors.New(ResponseKeyNotFound)
 	}
 
 	if d.Path != "" {
@@ -184,12 +184,12 @@ func (d *Database) Update(db string, key string, newValue string) error {
 
 	keyMaps, exists := d.Maps[db]
 	if !exists {
-		return errors.New("DATABASE_NOT_FOUND")
+		return errors.New(ResponseDatabaseNotFound)
 	}
 
 	_, exists = keyMaps[key]
 	if !exists {
-		return errors.New("KEY_NOT_FOUND")
+		return errors.New(ResponseKeyNotFound)
 	}
 
 	if d.Path != "" {
