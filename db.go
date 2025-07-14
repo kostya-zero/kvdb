@@ -48,7 +48,6 @@ func (d *Database) LoadFromFile() error {
 	}
 
 	d.Maps = dbMirror.Maps
-	d.Path = dbMirror.Path
 
 	return nil
 }
@@ -63,7 +62,6 @@ func (d *Database) SaveToFile() error {
 
 	dbMirror := DatabaseMirror{
 		Maps: d.Maps,
-		Path: d.Path,
 	}
 
 	encoder := gob.NewEncoder(f)

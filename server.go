@@ -38,6 +38,8 @@ func StartServer(port int, file string) error {
 	defer listener.Close()
 	LogInfo("Starting TCP server on port " + strconv.Itoa(port))
 
+	var wg sync.WaitGroup
+
 	go func() {
 		<-ctx.Done()
 		LogInfo("Received CTRL+C. Shutting down server...")
@@ -48,14 +50,24 @@ func StartServer(port int, file string) error {
 		conn, err := listener.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil
+				break
 			}
 			LogError("failed to accept connection: " + err.Error())
 			continue
 		}
 
-		go handleConn(conn)
+		wg.Add(1)
+		go func(c net.Conn) {
+			defer wg.Done()
+			defer conn.Close()
+			handleConn(conn)
+		}(conn)
 	}
+
+	LogInfo("Waiting for all workers to finish.")
+	wg.Wait()
+	LogInfo("Goodbye.")
+	return nil
 }
 
 func sendResponse(conn net.Conn, msg string) {
@@ -71,7 +83,6 @@ var bufPool = sync.Pool{
 	},
 }
 
-// Handle the TCP connection.
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	buf := bufPool.Get().([]byte)
