@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -64,10 +65,17 @@ func sendResponse(conn net.Conn, msg string) {
 	}
 }
 
+var bufPool = sync.Pool{
+	New: func() any {
+		return make([]byte, 2048)
+	},
+}
+
 // Handle the TCP connection.
 func handleConn(conn net.Conn) {
 	defer conn.Close()
-	buf := make([]byte, 1024)
+	buf := bufPool.Get().([]byte)
+	defer bufPool.Put(&buf)
 	for {
 		n, err := conn.Read(buf)
 		if err == io.EOF {
