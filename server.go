@@ -57,13 +57,14 @@ func StartServer(port int, file string) error {
 	}
 }
 
-func sendResponse(conn *net.Conn, msg string) {
-	_, err := (*conn).Write([]byte(msg))
+func sendResponse(conn net.Conn, msg string) {
+	_, err := conn.Write([]byte(msg))
 	if err != nil {
 		LogError("failed to send response: " + err.Error())
 	}
 }
 
+// Handle the TCP connection.
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 1024)
@@ -79,30 +80,30 @@ func handleConn(conn net.Conn) {
 		receiveQuery := string(buf[:n])
 		query, err := parseQuery(receiveQuery)
 		if err != nil {
-			sendResponse(&conn, ResponseBadQuery)
+			sendResponse(conn, ResponseBadQuery)
 			continue
 		}
 
 		switch {
 		case query.CreateDB != nil:
-			handleCreateDB(query.CreateDB, &conn)
+			handleCreateDB(query.CreateDB, conn)
 		case query.Get != nil:
-			handleGet(query.Get, &conn)
+			handleGet(query.Get, conn)
 		case query.Set != nil:
-			handleSet(query.Set, &conn)
+			handleSet(query.Set, conn)
 		case query.Remove != nil:
 			switch query.Remove.Which {
 			case "DB":
-				handleRemoveDB(query.Remove, &conn)
+				handleRemoveDB(query.Remove, conn)
 			case "KEY":
-				handleRemoveKey(query.Remove, &conn)
+				handleRemoveKey(query.Remove, conn)
 			default:
-				sendResponse(&conn, ResponseBadQuery)
+				sendResponse(conn, ResponseBadQuery)
 			}
 		case query.Update != nil:
-			handleUpdate(query.Update, &conn)
+			handleUpdate(query.Update, conn)
 		default:
-			sendResponse(&conn, ResponseBadQuery)
+			sendResponse(conn, ResponseBadQuery)
 		}
 	}
 }
@@ -111,7 +112,7 @@ func IsValid(data string) bool {
 	return strings.Contains(data, ":")
 }
 
-func handleCreateDB(query *CreateDBQuery, conn *net.Conn) {
+func handleCreateDB(query *CreateDBQuery, conn net.Conn) {
 	name := query.Name
 
 	err := db.CreateDB(name)
@@ -125,7 +126,7 @@ func handleCreateDB(query *CreateDBQuery, conn *net.Conn) {
 	sendResponse(conn, ResponseOk)
 }
 
-func handleGet(query *GetQuery, conn *net.Conn) {
+func handleGet(query *GetQuery, conn net.Conn) {
 	targetDB := query.Location.DB
 	key := query.Location.Key
 
@@ -138,7 +139,7 @@ func handleGet(query *GetQuery, conn *net.Conn) {
 	sendResponse(conn, value)
 }
 
-func handleSet(query *SetQuery, conn *net.Conn) {
+func handleSet(query *SetQuery, conn net.Conn) {
 	value := strings.Trim(query.Value, "\"")
 	targetDB := query.Location.DB
 	key := query.Location.Key
@@ -158,7 +159,7 @@ func handleSet(query *SetQuery, conn *net.Conn) {
 	sendResponse(conn, ResponseOk)
 }
 
-func handleRemoveDB(query *RemoveQuery, conn *net.Conn) {
+func handleRemoveDB(query *RemoveQuery, conn net.Conn) {
 	targetDB := query.DB
 
 	err := db.DeleteDB(targetDB)
@@ -171,7 +172,7 @@ func handleRemoveDB(query *RemoveQuery, conn *net.Conn) {
 	sendResponse(conn, ResponseOk)
 }
 
-func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
+func handleRemoveKey(query *RemoveQuery, conn net.Conn) {
 	targetDB := query.DB
 	key := query.Key
 
@@ -190,7 +191,7 @@ func handleRemoveKey(query *RemoveQuery, conn *net.Conn) {
 	sendResponse(conn, ResponseOk)
 }
 
-func handleUpdate(query *UpdateQuery, conn *net.Conn) {
+func handleUpdate(query *UpdateQuery, conn net.Conn) {
 	targetDB := query.Location.DB
 	key := query.Location.Key
 	value := strings.Trim(query.Value, "\n")
