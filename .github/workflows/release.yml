@@ -35,14 +35,14 @@ jobs:
         run: |
           mkdir -p release
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-            go build -o release/myapp-${{ matrix.goos }}-${{ matrix.goarch }} ./...
+            go build -o release/kvdb-${{ matrix.goos }}-${{ matrix.goarch }} ./...
       - name: Compile (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path release -Force
           $env:GOOS='${{ matrix.goos }}'; $env:GOARCH='${{ matrix.goarch }}'
-          go build -o release\myapp-${{ matrix.goos }}-${{ matrix.goarch }}.exe .
+          go build -o release\kvdb-${{ matrix.goos }}-${{ matrix.goarch }}.exe .
 
       - uses: actions/upload-artifact@v3
         with:
