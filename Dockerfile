@@ -19,5 +19,5 @@ COPY --from=builder /app/main .
 
 EXPOSE 5511
 
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["./main", "serve"]
 

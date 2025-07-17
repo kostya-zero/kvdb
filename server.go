@@ -28,7 +28,7 @@ func StartServer(port int, file string) error {
 		err := db.LoadFromFile()
 		if err != nil {
 			LogError("failed to load database: " + err.Error())
-			LogInfo("Falling back to in-memory database")
+			LogWarn("Falling back to in-memory database")
 		} else {
 			LogInfo("Using file database.")
 			wg.Add(1)
