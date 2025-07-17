@@ -15,9 +15,10 @@ func Save(db *Database) {
 }
 
 type Database struct {
-	Path string
-	Mu   sync.RWMutex
-	Maps map[string]map[string]string
+	Path  string
+	Mu    sync.RWMutex
+	Maps  map[string]map[string]string
+	Dirty bool
 }
 
 type DatabaseMirror struct {
@@ -74,8 +75,9 @@ func (d *Database) SaveToFile() error {
 
 func NewDatabase(path string) *Database {
 	return &Database{
-		Path: path,
-		Maps: make(map[string]map[string]string),
+		Path:  path,
+		Maps:  make(map[string]map[string]string),
+		Dirty: false,
 	}
 }
 
@@ -106,9 +108,7 @@ func (d *Database) DeleteDB(name string) error {
 		return errors.New(ResponseDatabaseNotFound)
 	}
 
-	if d.Path != "" {
-		defer Save(d)
-	}
+	d.Dirty = true
 
 	delete(d.Maps, name)
 
@@ -129,9 +129,7 @@ func (d *Database) Add(db string, key string, value string) error {
 		return errors.New(ResponseAlreadyExists)
 	}
 
-	if d.Path != "" {
-		defer Save(d)
-	}
+	d.Dirty = true
 
 	keysMap[key] = value
 	return nil
@@ -168,9 +166,7 @@ func (d *Database) Remove(db string, key string) error {
 		return errors.New(ResponseKeyNotFound)
 	}
 
-	if d.Path != "" {
-		defer Save(d)
-	}
+	d.Dirty = true
 
 	delete(keysMap, key)
 	return nil
@@ -190,9 +186,7 @@ func (d *Database) Update(db string, key string, newValue string) error {
 		return errors.New(ResponseKeyNotFound)
 	}
 
-	if d.Path != "" {
-		defer Save(d)
-	}
+	d.Dirty = true
 
 	keyMaps[key] = newValue
 	return nil

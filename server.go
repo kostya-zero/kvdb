@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var db *Database
@@ -18,27 +19,35 @@ func StartServer(port int, file string) error {
 	LogInfo("KVDB " + version + " is starting...")
 	db = NewDatabase(file)
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var wg sync.WaitGroup
+
 	if file != "" {
 		err := db.LoadFromFile()
 		if err != nil {
 			LogError("failed to load database: " + err.Error())
+			LogInfo("Falling back to in-memory database")
 		} else {
 			LogInfo("Using file database.")
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				BackupService(ctx, time.Minute, db)
+			}()
 		}
 	} else {
 		LogInfo("Using in-memory database.")
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
-	LogInfo("Starting TCP server on port " + strconv.Itoa(port))
 
-	var wg sync.WaitGroup
+	LogInfo("Starting TCP server on port " + strconv.Itoa(port))
 
 	go func() {
 		<-ctx.Done()
@@ -68,6 +77,34 @@ func StartServer(port int, file string) error {
 	wg.Wait()
 	LogInfo("Goodbye.")
 	return nil
+}
+
+func BackupService(ctx context.Context, interval time.Duration, db *Database) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			PerformBackup(db)
+		case <-ctx.Done():
+			LogInfo("backing up database...")
+			PerformBackup(db)
+			return
+		}
+	}
+}
+
+func PerformBackup(db *Database) {
+	if !db.Dirty {
+		return
+	}
+
+	if err := db.SaveToFile(); err != nil {
+		LogError("backup failed: " + err.Error())
+	} else {
+		LogInfo("database backup completed.")
+		db.Dirty = false
+	}
 }
 
 func sendResponse(conn net.Conn, msg string) {
