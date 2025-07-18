@@ -73,9 +73,10 @@ func StartServer(port int, file string) error {
 		}(conn)
 	}
 
-	LogInfo("Waiting for all workers to finish.")
-	wg.Wait()
-	LogInfo("Goodbye.")
+	// I'll left if for a while.
+	// LogInfo("Waiting for all workers to finish.")
+	// wg.Wait()
+	// LogInfo("Goodbye.")
 	return nil
 }
 
