@@ -10,6 +10,14 @@ import (
 	_ "net/http/pprof"
 )
 
+func GetEnv(name string, defaultValue string) string {
+	variable := os.Getenv(name)
+	if variable == "" {
+		return defaultValue
+	}
+	return variable
+}
+
 func main() {
 	go func() {
 		println(http.ListenAndServe("localhost:6060", nil))
@@ -24,17 +32,23 @@ func main() {
 		Use:   "serve",
 		Short: "Start the KVDB server.",
 		Run: func(cmd *cobra.Command, args []string) {
-			port := os.Getenv("KVDB_PORT")
-			if port == "" {
-				port = "5511"
-			}
+			port := GetEnv("KVDB_PORT", "5511")
 			portInt, err := strconv.Atoi(port)
 			if err != nil {
 				LogWarn("Invalid port in KVDB_PORT. Falling back to 5511.")
 				portInt = 5511
 			}
-			file := os.Getenv("KVDB_DATABASE")
-			err = StartServer(portInt, file)
+
+			file := GetEnv("KVDB_DATABASE", "")
+
+			interval := GetEnv("KVDB_SAVE_INTERVAL", "60000")
+			intervalInt, err := strconv.Atoi(interval)
+			if err != nil {
+				LogWarn("Invalid interval in KVDB_SAVE_INTERVAL. Falling back to 60000.")
+				intervalInt = 60000
+			}
+
+			err = StartServer(portInt, file, intervalInt)
 			if err != nil {
 				println("error: " + err.Error())
 				os.Exit(1)

@@ -15,7 +15,7 @@ import (
 
 var db *Database
 
-func StartServer(port int, file string) error {
+func StartServer(port int, file string, saveInterval int) error {
 	LogInfo("KVDB " + version + " is starting...")
 	db = NewDatabase(file)
 
@@ -34,7 +34,7 @@ func StartServer(port int, file string) error {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				BackupService(ctx, time.Minute, db)
+				BackupService(ctx, time.Millisecond*time.Duration(saveInterval), db)
 			}()
 		}
 	} else {
@@ -51,7 +51,7 @@ func StartServer(port int, file string) error {
 
 	go func() {
 		<-ctx.Done()
-		LogInfo("Received CTRL+C. Shutting down server...")
+		LogInfo("Shutting down server...")
 		listener.Close()
 	}()
 
