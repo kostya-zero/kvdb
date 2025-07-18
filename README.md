@@ -33,6 +33,7 @@ All options for KVDB should be provided as environment variables. Available vari
 
 - `KVDB_PORT` - TCP port to bind to (default `5511`).
 - `KVDB_DATABASE` - path to the database file. When omitted, data is kept in memory only.
+- `KVDB_SAVE_INTERVAL` - the save interval in milliseconds. After this time, KVDB will run save if it is needed.
 
 Examples:
 
