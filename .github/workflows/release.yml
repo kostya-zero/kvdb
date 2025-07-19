@@ -44,7 +44,7 @@ jobs:
           $env:GOOS='${{ matrix.goos }}'; $env:GOARCH='${{ matrix.goarch }}'
           go build -o release\kvdb-${{ matrix.goos }}-${{ matrix.goarch }}.exe .
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: myapp-${{ matrix.goos }}-${{ matrix.goarch }}
           path: release/**
