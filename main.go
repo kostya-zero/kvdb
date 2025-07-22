@@ -1,13 +1,10 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
-
-	_ "net/http/pprof"
 )
 
 func GetEnv(name string, defaultValue string) string {
@@ -19,10 +16,6 @@ func GetEnv(name string, defaultValue string) string {
 }
 
 func main() {
-	go func() {
-		println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	rootCmd := &cobra.Command{
 		Use:   "kvdb",
 		Short: "A key-value database",
