@@ -7,13 +7,6 @@ import (
 	"sync"
 )
 
-func Save(db *Database) {
-	err := db.SaveToFile()
-	if err != nil {
-		LogError("failed to save database: " + err.Error())
-	}
-}
-
 type Database struct {
 	Path  string
 	Mu    sync.RWMutex
@@ -22,7 +15,6 @@ type Database struct {
 }
 
 type DatabaseMirror struct {
-	Path string
 	Maps map[string]map[string]string
 }
 
@@ -30,7 +22,7 @@ func (d *Database) LoadFromFile() error {
 	f, err := os.OpenFile(d.Path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		if err.Error() == "EOF" {
-			LogWarn("Database file not found. Creating new one.")
+			LogWarn("database", "Database file not found. Creating new one.")
 			return nil
 		}
 		return err
@@ -41,10 +33,6 @@ func (d *Database) LoadFromFile() error {
 	var dbMirror DatabaseMirror
 	decoder := gob.NewDecoder(f)
 	if err = decoder.Decode(&dbMirror); err != nil {
-		if err.Error() == "EOF" {
-			LogWarn("Database file not found. Creating new one.")
-			return nil
-		}
 		return err
 	}
 
@@ -90,9 +78,7 @@ func (d *Database) CreateDB(name string) error {
 		return errors.New(ResponseAlreadyExists)
 	}
 
-	if d.Path != "" {
-		defer Save(d)
-	}
+	d.Dirty = true
 
 	d.Maps[name] = make(map[string]string)
 

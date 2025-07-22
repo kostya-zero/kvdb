@@ -35,7 +35,7 @@ func main() {
 			port := GetEnv("KVDB_PORT", "5511")
 			portInt, err := strconv.Atoi(port)
 			if err != nil {
-				LogWarn("Invalid port in KVDB_PORT. Falling back to 5511.")
+				LogWarn("cli", "Invalid port in KVDB_PORT. Falling back to 5511.")
 				portInt = 5511
 			}
 
@@ -44,7 +44,7 @@ func main() {
 			interval := GetEnv("KVDB_SAVE_INTERVAL", "60000")
 			intervalInt, err := strconv.Atoi(interval)
 			if err != nil {
-				LogWarn("Invalid interval in KVDB_SAVE_INTERVAL. Falling back to 60000.")
+				LogWarn("cli", "Invalid interval in KVDB_SAVE_INTERVAL. Falling back to 60000.")
 				intervalInt = 60000
 			}
 

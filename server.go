@@ -16,7 +16,7 @@ import (
 var db *Database
 
 func StartServer(port int, file string, saveInterval int) error {
-	LogInfo("KVDB " + version + " is starting...")
+	LogInfo("server", "KVDB "+version+" is starting...")
 	db = NewDatabase(file)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -27,10 +27,10 @@ func StartServer(port int, file string, saveInterval int) error {
 	if file != "" {
 		err := db.LoadFromFile()
 		if err != nil {
-			LogError("failed to load database: " + err.Error())
-			LogWarn("Falling back to in-memory database")
+			LogError("server", "failed to load database: "+err.Error())
+			LogWarn("server", "Falling back to in-memory database")
 		} else {
-			LogInfo("Using file database.")
+			LogInfo("server", "Using file database.")
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -38,7 +38,7 @@ func StartServer(port int, file string, saveInterval int) error {
 			}()
 		}
 	} else {
-		LogInfo("Using in-memory database.")
+		LogInfo("server", "Using in-memory database.")
 	}
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
@@ -47,11 +47,11 @@ func StartServer(port int, file string, saveInterval int) error {
 	}
 	defer listener.Close()
 
-	LogInfo("Starting TCP server on port " + strconv.Itoa(port))
+	LogInfo("server", "Starting TCP server on port "+strconv.Itoa(port))
 
 	go func() {
 		<-ctx.Done()
-		LogInfo("Shutting down server...")
+		LogInfo("server", "Shutting down server...")
 		listener.Close()
 	}()
 
@@ -61,7 +61,7 @@ func StartServer(port int, file string, saveInterval int) error {
 			if ctx.Err() != nil {
 				break
 			}
-			LogError("failed to accept connection: " + err.Error())
+			LogError("server", "failed to accept connection: "+err.Error())
 			continue
 		}
 
@@ -88,7 +88,7 @@ func BackupService(ctx context.Context, interval time.Duration, db *Database) {
 		case <-ticker.C:
 			PerformBackup(db)
 		case <-ctx.Done():
-			LogInfo("backing up database...")
+			LogInfo("backup_service", "backing up database...")
 			PerformBackup(db)
 			return
 		}
@@ -101,9 +101,9 @@ func PerformBackup(db *Database) {
 	}
 
 	if err := db.SaveToFile(); err != nil {
-		LogError("backup failed: " + err.Error())
+		LogError("backup_service", "backup failed: "+err.Error())
 	} else {
-		LogInfo("database backup completed.")
+		LogInfo("backup_service", "database backup completed.")
 		db.Dirty = false
 	}
 }
@@ -111,7 +111,7 @@ func PerformBackup(db *Database) {
 func sendResponse(conn net.Conn, msg string) {
 	_, err := conn.Write([]byte(msg))
 	if err != nil {
-		LogError("failed to send response: " + err.Error())
+		LogError("server", "failed to send response: "+err.Error())
 	}
 }
 
@@ -131,7 +131,7 @@ func handleConn(conn net.Conn) {
 			break
 		}
 		if err != nil {
-			LogError("failed to read from connection: " + err.Error())
+			LogError("server", "failed to read from connection: "+err.Error())
 			return
 		}
 		receiveQuery := string(buf[:n])
@@ -178,7 +178,7 @@ func handleCreateDB(query *CreateDBQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("database '" + name + "' has beed created.")
+	LogInfo("database", "map '"+name+"' has beed created.")
 
 	sendResponse(conn, ResponseOk)
 }
@@ -212,7 +212,7 @@ func handleSet(query *SetQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("created key '" + key + "' on database '" + targetDB + "' with value '" + value + "'")
+	LogInfo("database", "created key '"+key+"' on map '"+targetDB+"' with value '"+value+"'")
 	sendResponse(conn, ResponseOk)
 }
 
@@ -225,7 +225,7 @@ func handleRemoveDB(query *RemoveQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("database '" + targetDB + "' has been removed.")
+	LogInfo("database", "map '"+targetDB+"' has been removed.")
 	sendResponse(conn, ResponseOk)
 }
 
@@ -244,7 +244,7 @@ func handleRemoveKey(query *RemoveQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("key '" + *key + "' from database '" + targetDB + "' has been removed")
+	LogInfo("database", "key '"+*key+"' from map '"+targetDB+"' has been removed")
 	sendResponse(conn, ResponseOk)
 }
 
@@ -264,6 +264,6 @@ func handleUpdate(query *UpdateQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("key '" + key + "' from database '" + targetDB + "' has been updated to value '" + value + "'")
+	LogInfo("database", "key '"+key+"' from map '"+targetDB+"' has been updated to value '"+value+"'")
 	sendResponse(conn, ResponseOk)
 }
