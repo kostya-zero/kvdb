@@ -177,3 +177,40 @@ func (d *Database) Update(db string, key string, newValue string) error {
 	keyMaps[key] = newValue
 	return nil
 }
+
+func (d *Database) List() (*[]string, error) {
+	d.Mu.RLock()
+	defer d.Mu.RUnlock()
+
+	if len(d.Maps) == 0 {
+		return nil, errors.New("DATABASE_IS_EMPTY")
+	}
+
+	var databases []string
+	for k := range d.Maps {
+		databases = append(databases, k)
+	}
+
+	return &databases, nil
+}
+
+func (d *Database) ListKeys(db string) ([]string, error) {
+	d.Mu.RLock()
+	defer d.Mu.RUnlock()
+
+	if len(d.Maps) == 0 {
+		return nil, errors.New("DATABASE_IS_EMPTY")
+	}
+
+	keysMap, exists := d.Maps[db]
+	if !exists {
+		return nil, errors.New("DATABASE_NOT_FOUND")
+	}
+
+	keys := make([]string, 0, len(keysMap))
+	for k := range keysMap {
+		keys = append(keys,k)
+	}
+
+	return keys, nil
+}
