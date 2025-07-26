@@ -159,13 +159,15 @@ func handleConn(conn net.Conn) {
 			}
 		case query.Update != nil:
 			handleUpdate(query.Update, conn)
+		case query.List != nil:
+			handleList(query.List, conn)
 		default:
 			sendResponse(conn, ResponseBadQuery)
 		}
 	}
 }
 
-func IsValid(data string) bool {
+func IsNotValid(data string) bool {
 	return strings.Contains(data, ":")
 }
 
@@ -178,7 +180,7 @@ func handleCreateDB(query *CreateDBQuery, conn net.Conn) {
 		return
 	}
 
-	LogInfo("database", "map '"+name+"' has beed created.")
+	LogInfo("database", "map '"+name+"' has been created.")
 
 	sendResponse(conn, ResponseOk)
 }
@@ -201,7 +203,7 @@ func handleSet(query *SetQuery, conn net.Conn) {
 	targetDB := query.Location.DB
 	key := query.Location.Key
 
-	if IsValid(value) {
+	if IsNotValid(value) {
 		sendResponse(conn, ResponseIllegalChars)
 		return
 	}
@@ -253,7 +255,7 @@ func handleUpdate(query *UpdateQuery, conn net.Conn) {
 	key := query.Location.Key
 	value := strings.Trim(query.Value, "\n")
 
-	if IsValid(value) {
+	if IsNotValid(value) {
 		sendResponse(conn, ResponseIllegalChars)
 		return
 	}
@@ -266,4 +268,42 @@ func handleUpdate(query *UpdateQuery, conn net.Conn) {
 
 	LogInfo("database", "key '"+key+"' from map '"+targetDB+"' has been updated to value '"+value+"'")
 	sendResponse(conn, ResponseOk)
+}
+
+func handleList(query *ListQuery, conn net.Conn) {
+	targetDB := query.DB
+
+	if targetDB == nil {
+		maps, err := db.List()
+		if err != nil {
+			sendResponse(conn, err.Error())
+			return
+		}
+		var res string
+		for _, c := range *maps {
+			res = res + c + "\n"
+		}
+
+		res = strings.TrimRight(res, "\n")
+		sendResponse(conn, res)
+		return
+	}
+
+	if IsNotValid(*targetDB) {
+		sendResponse(conn, ResponseIllegalChars)
+		return
+	}
+
+	keys, err := db.ListKeys(*targetDB)
+	if err != nil {
+		sendResponse(conn, err.Error())
+		return
+	}
+
+	var res string
+	for _, c := range keys {
+		res = res + c + "\n"
+	}
+	res = strings.TrimRight(res, "\n")
+	sendResponse(conn, res)
 }

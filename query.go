@@ -39,12 +39,18 @@ type UpdateQuery struct {
 	Value    string    `@String`
 }
 
+type ListQuery struct {
+	List string  `@"LIST"`
+	DB   *string `@Ident?`
+}
+
 type Query struct {
 	CreateDB *CreateDBQuery `@@`
 	Get      *GetQuery      `| @@`
 	Set      *SetQuery      `| @@`
 	Remove   *RemoveQuery   `| @@`
 	Update   *UpdateQuery   `| @@`
+	List     *ListQuery     `| @@`
 }
 
 func parseQuery(input string) (*Query, error) {

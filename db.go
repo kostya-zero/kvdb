@@ -199,17 +199,17 @@ func (d *Database) ListKeys(db string) ([]string, error) {
 	defer d.Mu.RUnlock()
 
 	if len(d.Maps) == 0 {
-		return nil, errors.New("DATABASE_IS_EMPTY")
+		return nil, errors.New(ResponseDatabaseIsEmpty)
 	}
 
 	keysMap, exists := d.Maps[db]
 	if !exists {
-		return nil, errors.New("DATABASE_NOT_FOUND")
+		return nil, errors.New(ResponseDatabaseNotFound)
 	}
 
 	keys := make([]string, 0, len(keysMap))
 	for k := range keysMap {
-		keys = append(keys,k)
+		keys = append(keys, k)
 	}
 
 	return keys, nil
