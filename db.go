@@ -183,7 +183,7 @@ func (d *Database) List() (*[]string, error) {
 	defer d.Mu.RUnlock()
 
 	if len(d.Maps) == 0 {
-		return nil, errors.New("DATABASE_IS_EMPTY")
+		return nil, errors.New(ResponseDatabaseIsEmpty)
 	}
 
 	var databases []string
