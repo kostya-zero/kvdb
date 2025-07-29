@@ -35,6 +35,7 @@ func main() {
 	overviewCmd := &cobra.Command{
 		Use:   "overview",
 		Short: "Inspect the database with tree view.",
+		Run:   overviewCommand,
 	}
 
 	rootCmd.AddCommand(serveCmd)

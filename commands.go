@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/xlab/treeprint"
 )
 
 func serveCommand(cmd *cobra.Command, args []string) {
@@ -33,4 +36,44 @@ func serveCommand(cmd *cobra.Command, args []string) {
 
 func versionCommand(cmd *cobra.Command, args []string) {
 	println("KVDB version: " + version)
+}
+
+func overviewCommand(cmd *cobra.Command, args []string) {
+	file := GetEnv("KVDB_DATABASE", "")
+
+	if file == "" {
+		println("Specify path to the database using KVDB_DATABASE environment variable.")
+		os.Exit(1)
+	}
+
+	db := NewDatabase(file)
+	err := db.LoadFromFile()
+	if err != nil {
+		println("An error occured while loading database: " + err.Error())
+		os.Exit(1)
+	}
+
+	if len(db.Maps) == 0 {
+		println("Database is empty.")
+		return
+	}
+
+	filename := filepath.Base(file)
+
+	tree := treeprint.NewWithRoot(filename)
+
+	for dbMap, keys := range db.Maps {
+		newBranch := tree.AddBranch(dbMap)
+
+		if len(keys) == 0 {
+			newBranch.AddNode("... empty map ...")
+			continue
+		}
+
+		for key, value := range keys {
+			newBranch.AddNode(fmt.Sprintf("%s: %s", key, value))
+		}
+	}
+
+	fmt.Println(tree.String())
 }

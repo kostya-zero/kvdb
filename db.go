@@ -28,6 +28,9 @@ func (d *Database) LoadFromFile() error {
 
 	decoder := gob.NewDecoder(f)
 	if err = decoder.Decode(&d.Maps); err != nil {
+		if err.Error() == "EOF" {
+			return nil
+		}
 		return err
 	}
 
