@@ -32,8 +32,14 @@ func main() {
 		Run:   versionCommand,
 	}
 
+	overviewCmd := &cobra.Command{
+		Use:   "overview",
+		Short: "Inspect the database with tree view.",
+	}
+
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(overviewCmd)
 
 	err := rootCmd.Execute()
 	if err != nil {

@@ -14,10 +14,6 @@ type Database struct {
 	Dirty bool
 }
 
-type DatabaseMirror struct {
-	Maps map[string]map[string]string
-}
-
 func (d *Database) LoadFromFile() error {
 	f, err := os.OpenFile(d.Path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -30,13 +26,10 @@ func (d *Database) LoadFromFile() error {
 
 	defer f.Close()
 
-	var dbMirror DatabaseMirror
 	decoder := gob.NewDecoder(f)
-	if err = decoder.Decode(&dbMirror); err != nil {
+	if err = decoder.Decode(&d.Maps); err != nil {
 		return err
 	}
-
-	d.Maps = dbMirror.Maps
 
 	return nil
 }
@@ -49,12 +42,8 @@ func (d *Database) SaveToFile() error {
 
 	defer f.Close()
 
-	dbMirror := DatabaseMirror{
-		Maps: d.Maps,
-	}
-
 	encoder := gob.NewEncoder(f)
-	if err = encoder.Encode(dbMirror); err != nil {
+	if err = encoder.Encode(d.Maps); err != nil {
 		return err
 	}
 
