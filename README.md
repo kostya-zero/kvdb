@@ -51,7 +51,7 @@ kvdb serve
 
 The server communicates over plain TCP.
 Each request is a single line command and the response is a text string.
-Thebasic commands are:
+The basic commands are:
 
 - `CREATEDB <db>` – create a new database map.
 - `REMOVE DB <db>` – remove a database.
