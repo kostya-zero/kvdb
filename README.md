@@ -26,7 +26,7 @@ docker run -p 5511:5511 kvdb
 Run the server with the `serve` command.
 
 ```shell
-kvdb serve 
+kvdb serve
 ```
 
 All options for KVDB should be provided as environment variables. Available variables:
@@ -44,13 +44,13 @@ kvdb serve
 # Persist data to kvdb.db and expose on custom port
 export KVDB_PORT=7777
 export KVDB_DATABASE/var/lib/kvdb/kvdb.db
-kvdb serve 
+kvdb serve
 ```
 
 ## API overview
 
-The server communicates over plain TCP. 
-Each request is a single line command and the response is a text string. 
+The server communicates over plain TCP.
+Each request is a single line command and the response is a text string.
 Thebasic commands are:
 
 - `CREATEDB <db>` – create a new database map.
@@ -59,9 +59,11 @@ Thebasic commands are:
 - `SET <db>.<key> "<value>"` – add a new key with value.
 - `GET <db>.<key>` – return the value for a key.
 - `UPDATE <db>.<key> "<value>"` – replace the current value.
+- `LIST <db>` - print list of databases (if database name is not provided) or keys inside database.
 
-Responses are either `OK` or one of the following error codes: `ALREADY_EXISTS`, `DATABASE_NOT_FOUND`, `KEY_NOT_FOUND`,
-`KEY_NOT_PROVIDED`, `ILLEGAL_CHARACTERS`, or `BAD_QUERY`.
+Responses are either `OK` or one of the following error codes: `ALREADY_EXISTS`,
+`DATABASE_IS_EMPTY`, `DATABASE_NOT_FOUND`, `KEY_NOT_FOUND`,`KEY_NOT_PROVIDED`,
+`ILLEGAL_CHARACTERS`, or `BAD_QUERY`.
 
 You can test the server with tools like `nc`:
 
