@@ -146,8 +146,8 @@ func handleConn(conn net.Conn) {
 			handleCreateDB(query.CreateDB, conn)
 		case query.Get != nil:
 			handleGet(query.Get, conn)
-		case query.Set != nil:
-			handleSet(query.Set, conn)
+		case query.Insert != nil:
+			handleSet(query.Insert, conn)
 		case query.Remove != nil:
 			switch query.Remove.Which {
 			case "DB":
@@ -198,7 +198,7 @@ func handleGet(query *GetQuery, conn net.Conn) {
 	sendResponse(conn, value)
 }
 
-func handleSet(query *SetQuery, conn net.Conn) {
+func handleSet(query *InsertQuery, conn net.Conn) {
 	value := strings.Trim(query.Value, "\"")
 	targetDB := query.Location.DB
 	key := query.Location.Key

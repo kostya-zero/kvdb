@@ -20,8 +20,8 @@ type GetQuery struct {
 	Location *Location `@@`
 }
 
-type SetQuery struct {
-	Set      string    `@"SET"`
+type InsertQuery struct {
+	Insert   string    `@"INSERT"`
 	Location *Location `@@`
 	Value    string    `@String`
 }
@@ -47,7 +47,7 @@ type ListQuery struct {
 type Query struct {
 	CreateDB *CreateDBQuery `@@`
 	Get      *GetQuery      `| @@`
-	Set      *SetQuery      `| @@`
+	Insert   *InsertQuery   `| @@`
 	Remove   *RemoveQuery   `| @@`
 	Update   *UpdateQuery   `| @@`
 	List     *ListQuery     `| @@`
@@ -56,12 +56,12 @@ type Query struct {
 func parseQuery(input string) (*Query, error) {
 	parser, err := participle.Build[Query]()
 	if err != nil {
-		return &Query{}, err
+		return nil, err
 	}
 
 	expr, err := parser.ParseString("", input)
 	if err != nil {
-		return &Query{}, err
+		return nil, err
 	}
 	return expr, nil
 }
